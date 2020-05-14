@@ -39,6 +39,7 @@ public class AMQPPublisherGui extends AMQPSamplerGui {
     private JLabeledTextField replyToQueue = new JLabeledTextField("Reply-To Queue");
     private JLabeledTextField correlationId = new JLabeledTextField("Correlation Id");
     private JLabeledTextField contentType = new JLabeledTextField("ContentType");
+    private JLabeledTextField contentEncoding = new JLabeledTextField("ContentEncoding");
     private JLabeledTextField messageId = new JLabeledTextField("Message Id");
 
     private JCheckBox persistent = new JCheckBox("Persistent?", AMQPPublisher.DEFAULT_PERSISTENT);
@@ -79,6 +80,7 @@ public class AMQPPublisherGui extends AMQPSamplerGui {
         messageType.setText(sampler.getMessageType());
         replyToQueue.setText(sampler.getReplyToQueue());
         contentType.setText(sampler.getContentType());
+        contentEncoding.setText(sampler.getContentEncoding());
         correlationId.setText(sampler.getCorrelationId());
         messageId.setText(sampler.getMessageId());
         message.setText(sampler.getMessage());
@@ -115,6 +117,7 @@ public class AMQPPublisherGui extends AMQPSamplerGui {
         sampler.setReplyToQueue(replyToQueue.getText());
         sampler.setCorrelationId(correlationId.getText());
         sampler.setContentType(contentType.getText());
+        sampler.setContentEncoding(contentEncoding.getText());
         sampler.setMessageId(messageId.getText());
         sampler.setHeaders((Arguments) headers.createTestElement());
     }
@@ -137,6 +140,7 @@ public class AMQPPublisherGui extends AMQPSamplerGui {
         replyToQueue.setPreferredSize(new Dimension(100, 25));
         correlationId.setPreferredSize(new Dimension(100, 25));
         contentType.setPreferredSize(new Dimension(100, 25));
+        contentEncoding.setPreferredSize(new Dimension(100, 25));
         messageId.setPreferredSize(new Dimension(100, 25));
         message.setPreferredSize(new Dimension(400, 150));
 
@@ -147,6 +151,7 @@ public class AMQPPublisherGui extends AMQPSamplerGui {
         mainPanel.add(replyToQueue);
         mainPanel.add(correlationId);
         mainPanel.add(contentType);
+        mainPanel.add(contentEncoding);
         mainPanel.add(messageId);
         mainPanel.add(headers);
         mainPanel.add(message);

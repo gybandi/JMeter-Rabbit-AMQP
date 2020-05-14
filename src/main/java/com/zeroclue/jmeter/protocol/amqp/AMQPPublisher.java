@@ -39,6 +39,7 @@ public class AMQPPublisher extends AMQPSampler implements Interruptible {
     private final static String MESSAGE_TYPE = "AMQPPublisher.MessageType";
     private final static String REPLY_TO_QUEUE = "AMQPPublisher.ReplyToQueue";
     private final static String CONTENT_TYPE = "AMQPPublisher.ContentType";
+    private final static String CONTENT_ENCODING = "AMQPPublisher.ContentEncoding";
     private final static String CORRELATION_ID = "AMQPPublisher.CorrelationId";
     private final static String MESSAGE_ID = "AMQPPublisher.MessageId";
     private final static String HEADERS = "AMQPPublisher.Headers";
@@ -93,7 +94,6 @@ public class AMQPPublisher extends AMQPSampler implements Interruptible {
                 // seen by iostat -cd 1. TPS value remains at 0.
 
                 channel.basicPublish(getExchange(), getMessageRoutingKey(), messageProperties, messageBytes);
-
             }
 
             // commit the sample.
@@ -172,6 +172,16 @@ public class AMQPPublisher extends AMQPSampler implements Interruptible {
         setProperty(REPLY_TO_QUEUE, content);
     }
 
+
+    public String getContentEncoding() {
+        return getPropertyAsString(CONTENT_ENCODING);
+    }
+
+    public void setContentEncoding(String contentEncoding) {
+        setProperty(CONTENT_ENCODING, contentEncoding);
+    }
+
+
     public String getContentType() {
     	return getPropertyAsString(CONTENT_TYPE);
     }
@@ -226,7 +236,6 @@ public class AMQPPublisher extends AMQPSampler implements Interruptible {
        setProperty(USE_TX, tx);
     }
 
-    @Override
     public boolean interrupt() {
         cleanup();
         return true;
@@ -251,6 +260,7 @@ public class AMQPPublisher extends AMQPSampler implements Interruptible {
         builder.contentType(contentType)
             .deliveryMode(deliveryMode)
             .priority(0)
+            .contentEncoding(getContentEncoding())
             .correlationId(getCorrelationId())
             .replyTo(getReplyToQueue())
             .type(getMessageType())
