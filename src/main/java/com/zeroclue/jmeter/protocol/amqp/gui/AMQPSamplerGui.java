@@ -20,18 +20,19 @@ public abstract class AMQPSamplerGui extends AbstractSamplerGui {
 
     protected JLabeledTextField exchange = new JLabeledTextField("Exchange");
     private final JCheckBox exchangeRedeclare = new JCheckBox("Redeclare?", AMQPSampler.DEFAULT_EXCHANGE_REDECLARE);
+    protected JPanel queueSettings = new JPanel(new GridBagLayout());
     protected JLabeledTextField queue = new JLabeledTextField("Queue");
     protected JLabeledTextField routingKey = new JLabeledTextField("Routing Key");
     protected JLabeledTextField virtualHost = new JLabeledTextField("Virtual Host");
     protected JLabeledTextField messageTTL = new JLabeledTextField("Message TTL");
     protected JLabeledTextField messageExpires = new JLabeledTextField("Expires");
-    protected JLabeledChoice exchangeType = new JLabeledChoice("Exchange Type", new String[]{ "direct", "topic", "headers", "fanout"});
+    protected JLabeledChoice exchangeType = new JLabeledChoice("Exchange Type", new String[]{"direct", "topic", "headers", "fanout"});
     private final JCheckBox exchangeDurable = new JCheckBox("Durable?", AMQPSampler.DEFAULT_EXCHANGE_DURABLE);
     private final JCheckBox exchangeAutoDelete = new JCheckBox("Auto Delete?", AMQPSampler.DEFAULT_EXCHANGE_AUTO_DELETE);
-    private final JCheckBox queueDurable = new JCheckBox("Durable?", true);
-    private final JCheckBox queueRedeclare = new JCheckBox("Redeclare?", AMQPSampler.DEFAULT_QUEUE_REDECLARE);
-    private final JCheckBox queueExclusive = new JCheckBox("Exclusive", true);
-    private final JCheckBox queueAutoDelete = new JCheckBox("Auto Delete?", true);
+    protected final JCheckBox queueDurable = new JCheckBox("Durable?", true);
+    protected final JCheckBox queueRedeclare = new JCheckBox("Redeclare?", AMQPSampler.DEFAULT_QUEUE_REDECLARE);
+    protected final JCheckBox queueExclusive = new JCheckBox("Exclusive", true);
+    protected final JCheckBox queueAutoDelete = new JCheckBox("Auto Delete?", true);
 
     protected JLabeledTextField host = new JLabeledTextField("Host");
     protected JLabeledTextField port = new JLabeledTextField("Port");
@@ -40,8 +41,7 @@ public abstract class AMQPSamplerGui extends AbstractSamplerGui {
     protected JLabeledTextField password = new JLabeledTextField("Password");
     private final JCheckBox SSL = new JCheckBox("SSL?", false);
 
-    private final JLabeledTextField iterations = new JLabeledTextField("Number of samples to Aggregate");
-
+    protected final JLabeledTextField iterations = new JLabeledTextField("Number of samples to Aggregate");
 
 
     protected abstract void setMainPanel(JPanel panel);
@@ -156,7 +156,7 @@ public abstract class AMQPSamplerGui extends AbstractSamplerGui {
 
         mainPanel.add(makeCommonPanel());
 
-        iterations.setPreferredSize(new Dimension(50,25));
+        iterations.setPreferredSize(new Dimension(50, 25));
         mainPanel.add(iterations);
 
         add(mainPanel);
@@ -202,8 +202,7 @@ public abstract class AMQPSamplerGui extends AbstractSamplerGui {
         gridBagConstraints.gridy = 1;
         exchangeSettings.add(exchangeRedeclare, gridBagConstraints);
 
-        JPanel queueSettings = new JPanel(new GridBagLayout());
-        queueSettings.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Queue"));
+        queueSettings.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), getQueueSettingsLabel()));
 
 
         gridBagConstraints.gridx = 0;
@@ -285,6 +284,10 @@ public abstract class AMQPSamplerGui extends AbstractSamplerGui {
         commonPanel.add(serverSettings, gridBagConstraintsCommon);
 
         return commonPanel;
+    }
+
+    protected String getQueueSettingsLabel() {
+        return "Queue";
     }
 
 }
