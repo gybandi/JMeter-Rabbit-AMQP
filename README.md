@@ -30,3 +30,9 @@ Installing
 ----------
 
 To install the plugin, build the project and copy the generated JMeterAMQP.jar file from target/dist to JMeter's lib/ext/ directory.
+
+Additional information
+----------------------
+
+This fork has been extended with an AMQP RPC Client Sampler which enables RPC style communication on AMQP protocol. 
+Furthermore, maven has been introduced to the project and the amqp-client dependency has been upgraded to version 5.9.0 with the necessary code changes.

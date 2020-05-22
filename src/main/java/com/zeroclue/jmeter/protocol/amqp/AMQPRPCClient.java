@@ -2,8 +2,7 @@ package com.zeroclue.jmeter.protocol.amqp;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.QueueingConsumer;
-import org.apache.commons.lang.StringUtils;
+import com.rabbitmq.client.Delivery;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.samplers.Entry;
 import org.apache.jmeter.samplers.Interruptible;
@@ -18,6 +17,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * AMQP RPC Client Sampler using direct-reply-to
@@ -66,8 +69,8 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
     private final static String USE_TX = "AMQPConsumer.UseTx";
 
     private transient Channel channel;
-    private transient QueueingConsumer consumer;
-    private transient String cTag;
+    private transient BlockingQueue<Delivery> consumerQueue = new ArrayBlockingQueue<>(1);
+    private transient String ctag;
 
     public AMQPRPCClient() {
         super();
@@ -85,7 +88,7 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
 
         try {
             initChannel();
-            initReplyQueue();
+            initConsumer();
         } catch (Exception ex) {
             log.error("Failed to initialize channel : ", ex);
             result.setResponseMessage(ex.toString());
@@ -118,7 +121,6 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
             if (getUseTx()) {
                 channel.txCommit();
             }
-//            channel.basicCancel(cTag);
         } catch (IOException ioe) {
             log.info(ioe.getMessage(), ioe);
         }
@@ -127,27 +129,26 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
         return result;
     }
 
-    private void receiveMessage(SampleResult result, String data) {
+    private void receiveMessage(SampleResult result, String data) throws IOException {
         byte[] responseBody = new byte[0];
         AMQP.BasicProperties responseProperties = null;
 
         try {
             int rpcTimeout = getRpcTimeout();
             log.info("RPC timeout: " + getRpcTimeout());
-            QueueingConsumer.Delivery delivery = consumer.nextDelivery(getRpcTimeout());
+            log.info("reply-to: " + getReplyToQueue());
+            Delivery delivery = consumerQueue.poll(getRpcTimeout(), TimeUnit.MILLISECONDS);
+
             if (delivery == null) {
                 throw new IllegalStateException("RPC called timed out, no message received!");
             }
-            log.debug("Verify responseBody corrId: " + delivery.getProperties().getCorrelationId());
-            if (delivery.getProperties().getCorrelationId().equals(this.getCorrelationId())) {
-                log.debug("Got message with appropriate correlation Id: " + this.getCorrelationId());
-                responseBody = delivery.getBody();
-                responseProperties = delivery.getProperties();
-                if (!autoAck()) {
-                    channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                }
-            }
+            log.debug("Got message with appropriate correlation Id: " + this.getCorrelationId());
+            responseBody = delivery.getBody();
+            responseProperties = delivery.getProperties();
 
+            if (!autoAck()) {
+                channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+            }
             /*
              * Set up the sample result details
              */
@@ -160,14 +161,19 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
             result.setResponseCodeOK();
             result.setResponseMessage("OK");
             result.setSuccessful(true);
-        } catch (InterruptedException ie) {
+        } catch (
+                InterruptedException ie) {
             Thread.currentThread().interrupt();
-        } catch (Exception ex) {
+        } catch (
+                Exception ex) {
             log.info(ex.getMessage(), ex);
             result.sampleEnd();
             result.setResponseCode("500");
             result.setResponseMessage(ex.toString());
+        }finally {
+            channel.basicCancel(ctag);
         }
+
     }
 
     private void publishMessage(SampleResult result, AMQP.BasicProperties messageProperties, byte[] messageBytes) throws IOException {
@@ -416,14 +422,14 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
     }
 
     private String getPropertyOrNull(String property) {
-        if(property != null){
+        if (property != null) {
             return property.isEmpty() ? null : property;
-        }else{
+        } else {
             return null;
         }
     }
 
-    protected boolean initChannel() throws IOException, NoSuchAlgorithmException, KeyManagementException {
+    protected boolean initChannel() throws IOException, NoSuchAlgorithmException, KeyManagementException, TimeoutException {
         boolean ret = super.initChannel();
         if (getUseTx()) {
             channel.txSelect();
@@ -431,15 +437,17 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
         return ret;
     }
 
-    private void initReplyQueue() throws IOException {
-        log.debug("Start consuming on '" + getReplyToQueue() + "'");
-
-        if (consumer == null) {
-            log.info("Creating consumer...");
-            consumer = new QueueingConsumer(channel);
-            cTag = channel.basicConsume(getReplyToQueue(), autoAck(), consumer);
-            log.info("Consumer created");
-        }
+    private void initConsumer() throws IOException {
+        String correlationId = this.getCorrelationId();
+        log.info("correlation id: " + correlationId);
+        ctag = channel.basicConsume(getReplyToQueue(), autoAck(), (consumerTag, delivery) -> {
+            log.info("delivery properties: " + delivery.getProperties());
+            log.info("publisher correlation id: " + correlationId);
+            if (delivery.getProperties().getCorrelationId().equals(correlationId)) {
+                consumerQueue.offer(delivery);
+            }
+        }, consumerTag -> {
+        });
     }
 
     private Map<String, Object> prepareHeaders() {

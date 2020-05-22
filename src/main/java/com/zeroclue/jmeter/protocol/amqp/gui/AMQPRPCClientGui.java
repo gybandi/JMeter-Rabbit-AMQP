@@ -3,7 +3,6 @@ package com.zeroclue.jmeter.protocol.amqp.gui;
 import com.zeroclue.jmeter.protocol.amqp.AMQPRPCClient;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.config.gui.ArgumentsPanel;
-import org.apache.jmeter.gui.util.JDateField;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jorphan.gui.JLabeledTextArea;
 import org.apache.jorphan.gui.JLabeledTextField;
@@ -66,11 +65,6 @@ public class AMQPRPCClientGui extends AMQPSamplerGui {
     @Override
     public String getStaticLabel() {
         return "AMQP RPC Client";
-    }
-
-    @Override
-    protected String getQueueSettingsLabel() {
-        return "Reply-to Queue settings";
     }
 
     /**
@@ -160,78 +154,114 @@ public class AMQPRPCClientGui extends AMQPSamplerGui {
     @Override
     protected final void init() {
         super.init();
-        persistent.setPreferredSize(new Dimension(100, 25));
-        useTx.setPreferredSize(new Dimension(100, 25));
+
+        JPanel messageGrid = initMessageGrid();
+        JPanel propertiesGrid = initPropertiesGrid();
+
+
+        persistent.setPreferredSize(new Dimension(50, 25));
+        useTx.setPreferredSize(new Dimension(50, 25));
         rpcTimeoutInMs.setPreferredSize(new Dimension(20, 25));
-        messageRoutingKey.setPreferredSize(new Dimension(100, 25));
-        messageType.setPreferredSize(new Dimension(100, 25));
-        messageId.setPreferredSize(new Dimension(100, 25));
-        userId.setPreferredSize(new Dimension(100, 25));
-        clusterId.setPreferredSize(new Dimension(100, 25));
-        timestamp.setPreferredSize(new Dimension(100, 25));
-        expiration.setPreferredSize(new Dimension(100, 25));
+        messageRoutingKey.setPreferredSize(new Dimension(50, 25));
+        messageType.setPreferredSize(new Dimension(50, 25));
+        messageId.setPreferredSize(new Dimension(50, 25));
+        userId.setPreferredSize(new Dimension(50, 25));
+        clusterId.setPreferredSize(new Dimension(50, 25));
+        timestamp.setPreferredSize(new Dimension(50, 25));
+        expiration.setPreferredSize(new Dimension(50, 25));
         priority.setPreferredSize(new Dimension(10, 25));
-        contentType.setPreferredSize(new Dimension(100, 25));
-        contentEncoding.setPreferredSize(new Dimension(100, 25));
-        replyToQueue.setPreferredSize(new Dimension(100, 25));
-        correlationId.setPreferredSize(new Dimension(100, 25));
-        message.setPreferredSize(new Dimension(400, 150));
+        contentType.setPreferredSize(new Dimension(50, 25));
+        contentEncoding.setPreferredSize(new Dimension(50, 25));
+        replyToQueue.setPreferredSize(new Dimension(50, 25));
+        correlationId.setPreferredSize(new Dimension(50, 25));
         iterations.setVisible(false);
         directReplyTo.addChangeListener(e -> {
             JCheckBox source = (JCheckBox) e.getSource();
             if (source.isSelected()) {
-                clearReplyQueueProperties();
-                setReplyQueuePropertiesEnabled(false);
+                replyToQueue.setText("");
+                replyToQueue.setEnabled(false);
                 replyToQueue.setText("amq.rabbitmq.reply-to");
             } else {
-                clearReplyQueueProperties();
-                setReplyQueuePropertiesEnabled(true);
+                replyToQueue.setText("");
+                replyToQueue.setEnabled(true);
             }
         });
-        mainPanel.add(persistent);
-        mainPanel.add(useTx);
-        mainPanel.add(rpcTimeoutInMs);
-        mainPanel.add(messageRoutingKey);
-        mainPanel.add(messageType);
-        mainPanel.add(messageId);
-        mainPanel.add(userId);
-        mainPanel.add(clusterId);
-        mainPanel.add(timestamp);
-        mainPanel.add(expiration);
-        mainPanel.add(priority);
-        mainPanel.add(replyToQueue);
-        mainPanel.add(correlationId);
-        mainPanel.add(contentType);
-        mainPanel.add(contentEncoding);
-        mainPanel.add(autoAck);
-        mainPanel.add(directReplyTo);
-        mainPanel.add(headers);
-        mainPanel.add(message);
+        mainPanel.add(propertiesGrid);
+        mainPanel.add(messageGrid);
     }
 
-    private void clearReplyQueueProperties() {
-        queue.setText("");
-        routingKey.setText("");
-        messageTTL.setText("");
-        messageExpires.setText("");
-        replyToQueue.setText("");
-        queueDurable.setSelected(false);
-        queueExclusive.setSelected(false);
-        queueAutoDelete.setSelected(false);
-        queueRedeclare.setSelected(false);
+    private JPanel initPropertiesGrid() {
+        JPanel propertiesGrid = new JPanel(new GridBagLayout());
+        propertiesGrid.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Message properties"));
+        GridBagConstraints gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = GridBagConstraints.LINE_END;
+        gridBagConstraints.insets = new Insets(4, 4, 4, 20);
+        gridBagConstraints.weightx = 0.5;
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        propertiesGrid.add(rpcTimeoutInMs, gridBagConstraints);
+        gridBagConstraints.gridy = 1;
+        propertiesGrid.add(replyToQueue, gridBagConstraints);
+        gridBagConstraints.gridy = 2;
+        propertiesGrid.add(messageRoutingKey, gridBagConstraints);
+        gridBagConstraints.gridy = 3;
+        propertiesGrid.add(correlationId, gridBagConstraints);
+        gridBagConstraints.gridy = 4;
+        propertiesGrid.add(contentType, gridBagConstraints);
+        gridBagConstraints.gridy = 5;
+        propertiesGrid.add(contentEncoding, gridBagConstraints);
+        gridBagConstraints.gridy = 6;
+        propertiesGrid.add(messageId, gridBagConstraints);
+        gridBagConstraints.gridy = 7;
+        propertiesGrid.add(messageType, gridBagConstraints);
+
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        propertiesGrid.add(userId, gridBagConstraints);
+        gridBagConstraints.gridy = 1;
+        propertiesGrid.add(clusterId, gridBagConstraints);
+        gridBagConstraints.gridy = 2;
+        propertiesGrid.add(timestamp, gridBagConstraints);
+        gridBagConstraints.gridy = 3;
+        propertiesGrid.add(expiration, gridBagConstraints);
+        gridBagConstraints.gridy = 4;
+        propertiesGrid.add(priority, gridBagConstraints);
+        gridBagConstraints.gridy = 5;
+        propertiesGrid.add(autoAck, gridBagConstraints);
+        gridBagConstraints.gridy = 6;
+        propertiesGrid.add(directReplyTo, gridBagConstraints);
+        gridBagConstraints.gridy = 7;
+        propertiesGrid.add(persistent, gridBagConstraints);
+        gridBagConstraints.gridy = 8;
+        propertiesGrid.add(useTx, gridBagConstraints);
+        return propertiesGrid;
     }
 
-    private void setReplyQueuePropertiesEnabled(boolean enabled) {
-        queueSettings.setEnabled(enabled);
-        queue.setEnabled(enabled);
-        routingKey.setEnabled(enabled);
-        messageTTL.setEnabled(enabled);
-        messageExpires.setEnabled(enabled);
-        replyToQueue.setEnabled(enabled);
-        queueDurable.setEnabled(enabled);
-        queueExclusive.setEnabled(enabled);
-        queueAutoDelete.setEnabled(enabled);
-        queueRedeclare.setEnabled(enabled);
+    private JPanel initMessageGrid() {
+        message.setPreferredSize(new Dimension(400, 600));
+
+        JPanel messageSettings = new JPanel(new GridBagLayout());
+        messageSettings.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Headers & Payload"));
+
+        GridBagConstraints gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.insets = new Insets(4, 4, 4, 4);
+        gridBagConstraints.fill = GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 0.5;
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        messageSettings.add(headers, gridBagConstraints);
+
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        messageSettings.add(message, gridBagConstraints);
+        return messageSettings;
     }
 
     /**
