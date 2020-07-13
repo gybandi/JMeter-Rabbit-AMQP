@@ -12,6 +12,7 @@ import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -126,7 +127,7 @@ public class AMQPPublisher extends AMQPSampler implements Interruptible {
 
 
     private byte[] getMessageBytes() {
-        return getMessage().getBytes();
+        return getMessage().getBytes(StandardCharsets.UTF_8);
     }
 
     /**

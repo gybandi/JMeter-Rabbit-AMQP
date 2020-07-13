@@ -12,6 +12,7 @@ import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
@@ -58,13 +59,14 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
     private final static String EXPIRATION = "AMQPPublisher.Expiration";
     private final static String PRIORITY = "AMQPPublisher.Priority";
 
-
     private final static String CONTENT_TYPE = "AMQPPublisher.ContentType";
     private final static String CONTENT_ENCODING = "AMQPPublisher.ContentEncoding";
     private static final String DIRECT_REPLY_TO = "AMQPPublisher.DirectReplyTo";
+    private final static String THREADNUM_IN_LABEL = "ThreadnumInLabel";
     public static boolean DEFAULT_PERSISTENT = false;
     private final static String PERSISTENT = "AMQPConsumer.Persistent";
 
+    public final static boolean DEFAULT_THREADNUM_IN_LABEL = true;
     public static boolean DEFAULT_USE_TX = false;
     private final static String USE_TX = "AMQPConsumer.UseTx";
 
@@ -82,9 +84,14 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
     @Override
     public SampleResult sample(Entry e) {
         SampleResult result = new SampleResult();
-        result.setSampleLabel(getName());
+        String label = getTitle();
+        if (getThreadNumInLabel()) {
+            label += " thread-" + getThreadContext().getThreadNum();
+        }
+        result.setSampleLabel(label);
         result.setSuccessful(false);
         result.setResponseCode("500");
+        result.setContentType(getContentType());
 
         try {
             initChannel();
@@ -96,8 +103,6 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
         }
 
         String data = getMessage(); // Sampler data
-
-        result.setSampleLabel(getTitle());
         /*
          * Perform the sampling
          */
@@ -116,7 +121,6 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
             publishMessage(result, messageProperties, messageBytes);
 
             receiveMessage(result, data);
-
             // commit the sample.
             if (getUseTx()) {
                 channel.txCommit();
@@ -155,7 +159,7 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
             result.sampleEnd();
             result.setSamplerData(data);
             result.setResponseHeaders(responseProperties.getHeaders().toString());
-            result.setResponseData(new String(responseBody), null);
+            result.setResponseData(new String(responseBody, StandardCharsets.UTF_8), StandardCharsets.UTF_8.name());
             result.setDataType(SampleResult.TEXT);
 
             result.setResponseCodeOK();
@@ -170,7 +174,7 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
             result.sampleEnd();
             result.setResponseCode("500");
             result.setResponseMessage(ex.toString());
-        }finally {
+        } finally {
             channel.basicCancel(ctag);
         }
 
@@ -186,7 +190,7 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
 
 
     private byte[] getMessageBytes() {
-        return getMessage().getBytes();
+        return getMessage().getBytes(StandardCharsets.UTF_8);
     }
 
     /**
@@ -305,6 +309,14 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
 
     public void setAutoAck(Boolean autoAck) {
         setProperty(AUTO_ACK, autoAck.toString());
+    }
+
+    public Boolean getThreadNumInLabel() {
+        return getPropertyAsBoolean(THREADNUM_IN_LABEL, DEFAULT_THREADNUM_IN_LABEL);
+    }
+
+    public void setThreadNumInLabel(Boolean threadNumInLabel) {
+        setProperty(THREADNUM_IN_LABEL, threadNumInLabel);
     }
 
     public boolean autoAck() {
@@ -454,7 +466,21 @@ public class AMQPRPCClient extends AMQPSampler implements Interruptible {
         Map<String, Object> result = new HashMap<String, Object>();
         Map<String, String> source = getHeaders().getArgumentsAsMap();
         for (Map.Entry<String, String> item : source.entrySet()) {
-            result.put(item.getKey(), item.getValue());
+            Object value;
+            try {
+                value = Long.parseLong(item.getValue());
+                log.debug("Parsed to long: " + item.getKey() + " value: " + item.getValue());
+            } catch (Exception e) {
+                value = item.getValue();
+                log.debug("cannot parse to long: " + item.getKey() + " value: " + item.getValue());
+            }
+            if (value instanceof String) {
+                String strValue = (String) value;
+                if (!strValue.isEmpty() && strValue.charAt(0) == '"' && strValue.charAt(strValue.length() - 1) == '"') {
+                    value = strValue.substring(1, strValue.length() - 1);
+                }
+            }
+            result.put(item.getKey(), value);
             log.debug("added header: " + item.getKey() + " with value: " + item.getValue());
         }
         return result;

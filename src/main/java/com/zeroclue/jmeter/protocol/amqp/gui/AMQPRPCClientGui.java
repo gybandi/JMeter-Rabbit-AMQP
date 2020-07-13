@@ -47,6 +47,7 @@ public class AMQPRPCClientGui extends AMQPSamplerGui {
 
     private JCheckBox persistent = new JCheckBox("Persistent?", AMQPRPCClient.DEFAULT_PERSISTENT);
     private JCheckBox useTx = new JCheckBox("Use Transactions?", AMQPRPCClient.DEFAULT_USE_TX);
+    private JCheckBox threadNumInLabel = new JCheckBox("Show thread number in name", AMQPRPCClient.DEFAULT_THREADNUM_IN_LABEL);
 
     private ArgumentsPanel headers = new ArgumentsPanel("Headers");
 
@@ -94,6 +95,7 @@ public class AMQPRPCClientGui extends AMQPSamplerGui {
         contentEncoding.setText(sampler.getContentEncoding());
         correlationId.setText(sampler.getCorrelationId());
         autoAck.setSelected(sampler.autoAck());
+        threadNumInLabel.setSelected(sampler.getThreadNumInLabel());
         directReplyTo.setSelected(sampler.directReplyTo());
         message.setText(sampler.getMessage());
         configureHeaders(sampler);
@@ -139,6 +141,7 @@ public class AMQPRPCClientGui extends AMQPSamplerGui {
         sampler.setReplyToQueue(replyToQueue.getText());
         sampler.setCorrelationId(correlationId.getText());
         sampler.setAutoAck(autoAck.isSelected());
+        sampler.setThreadNumInLabel(threadNumInLabel.isSelected());
         sampler.setDirectReplyTo(directReplyTo.isSelected());
         sampler.setHeaders((Arguments) headers.createTestElement());
     }
@@ -188,6 +191,13 @@ public class AMQPRPCClientGui extends AMQPSamplerGui {
         });
         mainPanel.add(propertiesGrid);
         mainPanel.add(messageGrid);
+    }
+
+    @Override
+    protected Container makeTitlePanel() {
+        Container container = super.makeTitlePanel();
+        container.add(threadNumInLabel);
+        return container;
     }
 
     private JPanel initPropertiesGrid() {
@@ -286,6 +296,7 @@ public class AMQPRPCClientGui extends AMQPSamplerGui {
         rpcTimeoutInMs.setText("5000");
         contentType.setText("");
         autoAck.setSelected(true);
+        threadNumInLabel.setSelected(AMQPRPCClient.DEFAULT_THREADNUM_IN_LABEL);
         directReplyTo.setSelected(false);
         headers.clearGui();
         message.setText("");

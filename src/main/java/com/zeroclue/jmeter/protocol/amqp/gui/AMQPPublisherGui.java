@@ -1,26 +1,23 @@
 package com.zeroclue.jmeter.protocol.amqp.gui;
 
-import java.awt.Dimension;
-
-import javax.swing.*;
-
+import com.zeroclue.jmeter.protocol.amqp.AMQPPublisher;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.config.gui.ArgumentsPanel;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jorphan.gui.JLabeledTextArea;
 import org.apache.jorphan.gui.JLabeledTextField;
 
-import com.zeroclue.jmeter.protocol.amqp.AMQPPublisher;
+import javax.swing.*;
+import java.awt.*;
 
 /**
  * AMQP Sampler
- *
+ * <p>
  * This class is responsible for ensuring that the Sampler data is kept in step
  * with the GUI.
- *
+ * <p>
  * The GUI class is not invoked in non-GUI mode, so it should not perform any
  * additional setup that a test would need at run-time
- *
  */
 public class AMQPPublisherGui extends AMQPSamplerGui {
 
@@ -47,7 +44,7 @@ public class AMQPPublisherGui extends AMQPSamplerGui {
 
     private ArgumentsPanel headers = new ArgumentsPanel("Headers");
 
-    public AMQPPublisherGui(){
+    public AMQPPublisherGui() {
         init();
     }
 
@@ -123,7 +120,7 @@ public class AMQPPublisherGui extends AMQPSamplerGui {
     }
 
     @Override
-    protected void setMainPanel(JPanel panel){
+    protected void setMainPanel(JPanel panel) {
         mainPanel = panel;
     }
 
@@ -133,6 +130,10 @@ public class AMQPPublisherGui extends AMQPSamplerGui {
     @Override
     protected final void init() {
         super.init();
+
+        JPanel messageGrid = initMessageGrid();
+
+
         persistent.setPreferredSize(new Dimension(100, 25));
         useTx.setPreferredSize(new Dimension(100, 25));
         messageRoutingKey.setPreferredSize(new Dimension(100, 25));
@@ -142,7 +143,8 @@ public class AMQPPublisherGui extends AMQPSamplerGui {
         contentType.setPreferredSize(new Dimension(100, 25));
         contentEncoding.setPreferredSize(new Dimension(100, 25));
         messageId.setPreferredSize(new Dimension(100, 25));
-        message.setPreferredSize(new Dimension(400, 150));
+        headers.setPreferredSize(new Dimension(400, 300));
+        message.setPreferredSize(new Dimension(400, 300));
 
         mainPanel.add(persistent);
         mainPanel.add(useTx);
@@ -153,9 +155,32 @@ public class AMQPPublisherGui extends AMQPSamplerGui {
         mainPanel.add(contentType);
         mainPanel.add(contentEncoding);
         mainPanel.add(messageId);
-        mainPanel.add(headers);
-        mainPanel.add(message);
+        mainPanel.add(messageGrid);
     }
+
+    private JPanel initMessageGrid() {
+        message.setPreferredSize(new Dimension(400, 600));
+
+        JPanel messageSettings = new JPanel(new GridBagLayout());
+        messageSettings.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Headers & Payload"));
+
+        GridBagConstraints gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.insets = new Insets(4, 4, 4, 4);
+        gridBagConstraints.fill = GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 0.5;
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        messageSettings.add(headers, gridBagConstraints);
+
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        messageSettings.add(message, gridBagConstraints);
+        return messageSettings;
+    }
+
 
     /**
      * {@inheritDoc}
@@ -175,8 +200,7 @@ public class AMQPPublisherGui extends AMQPSamplerGui {
         message.setText("");
     }
 
-    private void configureHeaders(AMQPPublisher sampler)
-    {
+    private void configureHeaders(AMQPPublisher sampler) {
         Arguments sampleHeaders = sampler.getHeaders();
         if (sampleHeaders != null) {
             headers.configure(sampleHeaders);
